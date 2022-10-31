@@ -95,7 +95,7 @@ python app.py --userid 201805139999 --passwd abc123 --area 青岛馆-七楼-青�
 ```shell
 cd ./src/main/
 
-python app.py --userid 201900800xxx --passwd abc123 --area '威海馆-主楼(3-10)-三楼阅览室' --time 12:31:00 --delta 0 --seats 200 --starttime '08:00' --endtime '12:00'
+python app.py --userid 022300190103 --passwd c6f057b86584942e415435ffb1fa93d4 --area '图书馆-四楼-4F环廊' --time 06:00:05 --delta 0 --seats 200 --starttime '08:00' --endtime '12:00'
 python app.py --userid 201900800xxx --passwd abc123 --area '威海馆-主楼(3-10)-三楼阅览室' --time 12:31:00 --delta 0 --seats 200 --starttime '14:30' --endtime '22:00'
 
 ```
