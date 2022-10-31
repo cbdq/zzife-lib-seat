@@ -18,12 +18,12 @@ class TestWorker(TestCase):
             info = json.loads(file.read())
 
         date = datetime.datetime.today() + datetime.timedelta(days=1)
-        cls.auth, cls.spider = prepare(info['userid'], info['passwd'], '青岛馆-七楼-青岛馆七楼北阅览区', date, retry=1,
+        cls.auth, cls.spider = prepare(info['userid'], info['passwd'], '图书馆-四楼-4F环廊', date, retry=1,
                                        start_time='08:00', end_time='22:30')
 
     def setUp(self) -> None:
         self.worker = Worker(self.spider.date, self.auth.session.cookies,
-                             ['N105', 'N049', 'N041'],
+                             ['4M022', '4M024', '4M021'],
                              self.spider.seats, self.spider.segment)
 
     def test_book(self):
