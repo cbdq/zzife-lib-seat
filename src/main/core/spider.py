@@ -12,11 +12,27 @@ from logging import Logger
 class Spider(Thread):
     def __init__(self, query_area: list, date: datetime.date, retry, start_time, end_time):
         super().__init__()
-        self.headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/95.0.4638.69 Safari/537.36",
-            'Referer': 'http://seat.lib.sdu.edu.cn/',
-            'Host': 'seat.lib.sdu.edu.cn'
+        # self.headers = {
+        #     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
+        #                   "Chrome/95.0.4638.69 Safari/537.36",
+        #     'Referer': 'https://zwyy.tsg.zzife.xiaoyuanling.com/',
+        #     'Host': 'zwyy.tsg.zzife.xiaoyuanling.com'
+        # }
+        self.headers ={
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5',
+            'Connection': 'keep-alive',
+            "Origin": "https://zwyy.tsg.zzife.xiaoyuanling.com/home/web/f_second",
+            'Referer': 'https://zwyy.tsg.zzife.xiaoyuanling.com/',
+            "Host": "zwyy.tsg.zzife.xiaoyuanling.com",
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36 Edg/100.0.1185.39',
+            'X-Requested-With': 'XMLHttpRequest',
+            'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="100", "Microsoft Edge";v="100"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"',
         }
 
         self.query_area = query_area
@@ -38,7 +54,7 @@ class Spider(Thread):
 
     def get_lib(self):
         res = self.session.get(
-            "http://seat.lib.sdu.edu.cn/home/web/f_second", headers=self.headers)
+            "https://zwyy.tsg.zzife.xiaoyuanling.com/home/web/f_second", headers=self.headers)
         soup = BeautifulSoup(res.text, 'html.parser')
         keys = [e.string for e in soup.select(
             '.x_panel > div > .rooms > div:nth-child(2) > b')]
@@ -51,7 +67,7 @@ class Spider(Thread):
     def get_area(self, area, date):
         # res = self.session.get("http://seat.lib.sdu.edu.cn/api.php/v3areas/{}".format(area))
         res = self.session.get(
-            "http://seat.lib.sdu.edu.cn/api.php/v3areas/{}/date/{}".format(area, date))
+            "https://zwyy.tsg.zzife.xiaoyuanling.com/api.php/v3areas/{}/date/{}".format(area, date))
         status = res.json()['status']
         if status != 1:
             raise SpiderException('Cannot gather area info.')
@@ -63,7 +79,7 @@ class Spider(Thread):
         return res
 
     def get_seat(self, area, segment, date, start_time, end_time):
-        url = "http://seat.lib.sdu.edu.cn/api.php/spaces_old?area={area}&segment={segment}&day={day}&"\
+        url = "https://zwyy.tsg.zzife.xiaoyuanling.com/api.php/spaces_old?area={area}&segment={segment}&day={day}&"\
               "startTime={start_time}&endTime={end_time}".format(area=area, segment=segment, day=date,
                                                                  start_time=start_time, end_time=end_time)
         res = self.session.get(url)

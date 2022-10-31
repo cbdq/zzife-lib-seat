@@ -4,7 +4,8 @@ import json
 import urllib.parse
 from logging import Logger
 from unittest import TestCase
-from core.auth import Auth
+# from core.auth import Auth
+from src.main.core.auth import Auth
 
 
 class TestAuth(TestCase):

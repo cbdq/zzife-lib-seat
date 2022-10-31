@@ -10,20 +10,43 @@ import urllib.parse
 
 from logging import Logger
 
-
 # noinspection HttpUrlsUsage
+from src.main.core import ksdemo
+
+
 class Auth(Thread):
     def __init__(self, userid, password, retry):
         super().__init__()
-        self.userid = userid
-        self.password = password
+        # self.userid = userid
+        # self.password = password
         self.__retry = retry
-
-        self.lib_url = "http://seat.lib.sdu.edu.cn/home/web/f_second"
-        self.auth_url = "http://seat.lib.sdu.edu.cn/cas/index.php"
+        self.code = ''
+        self.verify_code_url = 'https://zwyy.tsg.zzife.xiaoyuanling.com/api.php/check'  # 验证码请求url
+        self.lib_url = "https://zwyy.tsg.zzife.xiaoyuanling.com/home/web/f_second"
+        self.auth_url = "https://zwyy.tsg.zzife.xiaoyuanling.com/api.php/login"
+        self.cookies = {
+            'PHPSESSID': 's6d3hs71nf4ttojhtt87elr2n1',
+            'redirect_url': '%2Fhome%2Fweb%2Fseat%2Farea%2F1',
+            'access_token': '',
+            'userid': userid,
+            'user_name': password,
+            'expire': ''
+        }
         self.headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
-                          "Chrome/95.0.4638.69 Safari/537.36",
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5',
+            'Connection': 'keep-alive',
+            # Requests sorts cookies= alphabetically
+            # 'Cookie': 'PHPSESSID=s6d3hs71nf4ttojhtt87elr2n1; redirect_url=%2Fhome%2Fweb%2Fseat%2Farea%2F1',
+            'Referer': 'https://zwyy.tsg.zzife.xiaoyuanling.com/home/web/seat/area/1',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-origin',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36 Edg/100.0.1185.39',
+            'X-Requested-With': 'XMLHttpRequest',
+            'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="100", "Microsoft Edge";v="100"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"',
         }
 
         self.lt, self.execution, self._eventId = None, None, None
@@ -35,75 +58,51 @@ class Auth(Thread):
         self.__already_login = False
         self.__logger: Logger = logging.getLogger()
 
-    def __gather_trivial(self, text):
-        try:
-            soup = BeautifulSoup(text, 'html.parser')
-            self.lt = soup.select_one("#lt").get("value")
-            self.execution = soup.select_one("[name=execution]").get("value")
-            self._eventId = soup.select_one("[name=_eventId]").get("value")
-        except TypeError as e:
-            self.__logger.error(e)
-
-        if self.lt and self.execution and self._eventId is None:
-            raise AuthException("未获取到用户登陆所需的所有信息")
-
-    def __get_rsa(self):
-        with open(os.path.join(os.path.dirname(__file__), "../util/des.js"), encoding="utf-8") as f:
-            js = f.read()
-            f.close()
-        self.rsa = execjs.compile(js).call(
-            'strEnc', self.userid + self.password + self.lt, "1", "2", "3")
-        if self.rsa is None:
-            raise AuthException("未获取DES加密的用户信息")
-
-    def __phase1(self, url):
+    def yzm(self, code):
         data = {
-            "ul": str(len(self.userid)),
-            "pl": str(len(self.password)),
-            "lt": self.lt,
-            "execution": self.execution,
-            "_eventId": self._eventId,
-            "rsa": self.rsa
+            'username': '022300190103',
+            'password': 'c6f057b86584942e415435ffb1fa93d4',
+            'verify': code,
         }
-        res = self.session.post(url, data=data, allow_redirects=False)
-        self.__logger.debug(
-            'Status code for phase-1-response is {}'.format(res.status_code))
-        if res.status_code != 302:
-            raise AuthException('阶段1：响应状态码为{}, 认证失败'.format(res.status_code))
-        url = urllib.parse.unquote(
-            res.headers.get("Location").replace(' ', ''))
-        if url.startswith("/cas/login?service="):
-            url = url.replace("/cas/login?service=", "")
+        return data
 
-        return url
+    # 获取验证码
+    def __gather_trivial(self):
+        Ks95man = ksdemo.KSClient()
+        Ks95man.GetTaken('ccccbbbb', '681201cccbbb')
+        verify_code_url = self.verify_code_url
+        code_response = self.session.get(url=verify_code_url, cookies=self.cookies, headers=self.headers, verify=False)
+        with open('verify.png', mode='wb') as f:
+            f.write(code_response.content)
 
-    def __phase2(self, url):
-        res = self.session.get(url, allow_redirects=True)
-        self.__logger.debug(
-            'Status code for phase-2-response is {}'.format(res.status_code))
-        if res.status_code != 200:
-            raise AuthException('阶段2：响应状态码为{}, 认证失败'.format(res.status_code))
-        return res.status_code
+        if Ks95man.GetTaken('ccccbbbb', '681201cccbbb'):
+            # 获取成功,taken获取一次就可以了，taken 生成后如果不用参数"isref=1"刷新，就一直不会变。如果写死在您的软件中，就要慎用"isref=1"，否则您之前写死的软件都要改taken。
+            # 开始识别
+            # 获取文件二进制流
+            code = Ks95man.PostPic('verify.png', 2)
+            self.code = code
+            print('识别结果：' + code)
+            # 识别报错
+            Ks95man.ReportError(88)
 
     def login(self):
 
-        # GET 图书馆认证界面 302 -> 统一身份认证界面
-        res = self.session.get(self.auth_url, allow_redirects=True)
         # 从统一身份认证界面获取必要信息
-        self.__gather_trivial(res.text)
-        # 加密脚本
-        self.__get_rsa()
-        # POST 统一身份认证 发送认证信息
-        url = self.__phase1(res.url)
+        self.__gather_trivial()
 
-        # 切换HEADER绕过检查再进行重定向
-        self.session.headers.update({
-            'Host': 'seat.lib.sdu.edu.cn'
-        })
-        self.__phase2(url)
+        # GET 图书馆认证界面 302 -> 统一身份认证界面
+        # res = self.session.get(self.auth_url, allow_redirects=True)
+        res = self.session.post(self.auth_url, cookies=self.cookies,
+                                headers=self.headers, data=self.yzm(self.code))
+        print(res.text)
+
+        # # 切换HEADER绕过检查再进行重定向
+        # self.session.headers.update({
+        #     'Host': 'seat.lib.sdu.edu.cn'
+        # })
 
         # 如果最终获取到这几个必要cookie则说明登陆成功
-        if self.session.cookies['userid'] and self.session.cookies['user_name'] and\
+        if self.session.cookies['userid'] and self.session.cookies['user_name'] and \
                 self.session.cookies['user_name'] and self.session.cookies['access_token'] is None:
             raise AuthException("登陆失败")
         else:
